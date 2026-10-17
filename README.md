@@ -3,11 +3,14 @@
 > *Built for Graph Hacks 2026 (WeMakeDevs x FalkorDB)*  
 > **Author**: Vidisha Gupta (Solo) | **License**: MIT
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-incident--brain--ashen.vercel.app-7928CA?style=flat-square&logo=vercel)](https://incident-brain-ashen.vercel.app)
 [![FalkorDB](https://img.shields.io/badge/Database-FalkorDB-ec4899?style=flat-square&logo=redis)](https://falkordb.com)
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12+-blue?style=flat-square&logo=python)](https://python.org)
 [![Tests](https://img.shields.io/badge/Tests-21%2F21%20Passing-brightgreen?style=flat-square)](/tests)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+
+🌐 **Live URL**: [https://incident-brain-ashen.vercel.app](https://incident-brain-ashen.vercel.app)
 
 ---
 

@@ -5,6 +5,7 @@
 **Author**: Vidisha Gupta (Solo)  
 **Hackathon**: Graph Hacks (WeMakeDevs x FalkorDB)  
 **GitHub Repository**: https://github.com/vidishagupta/incident-brain  
+**Live Application URL**: https://incident-brain-ashen.vercel.app  
 **License**: MIT License  
 
 ---
