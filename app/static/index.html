@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incident Brain — FalkorDB Graph-Powered Autonomous Incident Copilot</title>
+  <meta name="description" content="Autonomous incident response copilot leveraging FalkorDB multi-hop graph traversal, PageRank risk scoring, and persistent memory across teams.">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+            },
+            falkor: {
+              DEFAULT: '#ec4899',
+              glow: '#f43f5e',
+            },
+            dark: {
+              900: '#090d16',
+              800: '#0f172a',
+              700: '#1e293b',
+              600: '#334155',
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Force Graph CDN -->
+  <script src="https://unpkg.com/force-graph"></script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* Glassmorphism */
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .pulse-glow {
+      box-shadow: 0 0 25px rgba(236, 72, 153, 0.4);
+    }
+    
+    .active-tab {
+      border-bottom: 2px solid #ec4899;
+      color: #f43f5e;
+    }
+  </style>
+</head>
+<body class="bg-dark-900 text-slate-100 font-sans h-screen flex flex-col overflow-hidden select-none">
+
+  <!-- Top Navigation Header -->
+  <header class="h-16 glass-panel border-b border-slate-800 flex items-center justify-between px-6 z-20">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-rose-500/20">
+        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+            Incident Brain
+          </h1>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30 font-mono font-medium">
+            FalkorDB Graph Powered
+          </span>
+        </div>
+        <p class="text-xs text-slate-400">Autonomous Incident Graph Reasoning & Memory</p>
+      </div>
+    </div>
+
+    <!-- Center Control Indicators -->
+    <div class="flex items-center space-x-4">
+      <!-- Team Selector -->
+      <div class="flex items-center space-x-2 bg-dark-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 text-xs">
+        <span class="text-slate-400">Team:</span>
+        <select id="teamSelector" class="bg-transparent text-slate-200 font-medium focus:outline-none cursor-pointer">
+          <option value="core_platform">Core Platform</option>
+          <option value="payments_squad">Payments Squad</option>
+          <option value="reliability_ops">Reliability Ops</option>
+        </select>
+      </div>
+
+      <!-- Mode Pill -->
+      <div id="modeBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="modeText">FalkorDB Graph Engine</span>
+      </div>
+    </div>
+
+    <!-- Right Action Buttons -->
+    <div class="flex items-center space-x-3">
+      <button id="btnAutoDemo" class="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 text-white font-medium text-xs shadow-lg shadow-rose-500/25 transition-all transform active:scale-95">
+        <svg class="w-4 h-4 animate-spin-slow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        <span>Demo Mode</span>
+      </button>
+
+      <button id="btnResetDemo" title="Reset and re-seed FalkorDB graph" class="p-2 rounded-lg bg-dark-800 hover:bg-dark-700 border border-slate-700 text-slate-300 hover:text-white transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 flex overflow-hidden relative">
+
+    <!-- Left 60%: Interactive 2D Graph Visualizer -->
+    <section class="flex-1 min-w-0 relative flex flex-col bg-dark-900 border-r border-slate-800 overflow-hidden">
+      
+      <!-- Graph Canvas Container -->
+      <div id="graphCanvas" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+      <!-- Graph Floating Overlay Controls & Legend -->
+      <div class="absolute top-4 left-4 z-10 flex flex-col space-y-2 pointer-events-none">
+        
+        <!-- Legend Pill -->
+        <div class="glass-panel px-4 py-2.5 rounded-xl flex items-center space-x-4 text-xs font-medium pointer-events-auto shadow-xl">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span>
+            <span class="text-slate-300">Failing Root</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+            <span class="text-slate-300">Blast Radius</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+            <span class="text-slate-300">People</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-purple-500"></span>
+            <span class="text-slate-300">Incidents</span>
+          </div>
+          <div class="flex items-center space-x-1.5">
+            <span class="w-3 h-3 rounded-full bg-slate-400"></span>
+            <span class="text-slate-300">Docs / ADRs</span>
+          </div>
+        </div>
+
+        <!-- Graph Metrics Banner -->
+        <div class="glass-panel px-4 py-2 rounded-xl flex items-center space-x-4 text-xs font-mono text-slate-400 pointer-events-auto">
+          <div>Nodes: <span id="metricNodes" class="text-white font-bold">0</span></div>
+          <div>Edges: <span id="metricEdges" class="text-white font-bold">0</span></div>
+          <div>Blast Services: <span id="metricBlast" class="text-amber-400 font-bold">0</span></div>
+        </div>
+      </div>
+
+      <!-- Graph Viewport Controls -->
+      <div class="absolute bottom-4 left-4 z-10 flex space-x-2 pointer-events-auto">
+        <button id="btnZoomIn" class="w-8 h-8 rounded-lg glass-panel hover:bg-slate-700 flex items-center justify-center text-slate-300 transition text-sm font-bold">+</button>
+        <button id="btnZoomOut" class="w-8 h-8 rounded-lg glass-panel hover:bg-slate-700 flex items-center justify-center text-slate-300 transition text-sm font-bold">-</button>
+        <button id="btnCenterGraph" class="px-3 h-8 rounded-lg glass-panel hover:bg-slate-700 flex items-center justify-center text-slate-300 transition text-xs font-medium">Recenter</button>
+      </div>
+
+      <!-- Node Details Tooltip Card (hidden by default) -->
+      <div id="nodeDetailCard" class="absolute bottom-4 right-4 z-10 glass-panel p-4 rounded-xl max-w-sm hidden shadow-2xl border border-rose-500/30">
+        <div class="flex items-start justify-between">
+          <div>
+            <span id="cardLabel" class="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-300">Service</span>
+            <h4 id="cardTitle" class="text-sm font-bold text-white mt-1">auth-service</h4>
+          </div>
+          <button id="btnCloseCard" class="text-slate-400 hover:text-white">&times;</button>
+        </div>
+        <div id="cardContent" class="text-xs text-slate-300 mt-2 space-y-1"></div>
+      </div>
+    </section>
+
+    <!-- Right 40%: Copilot Investigation, Trace, & Memory Panel -->
+    <aside class="w-[520px] shrink-0 flex flex-col bg-dark-800 border-l border-slate-800 z-10 h-full">
+      
+      <!-- Panel Tabs -->
+      <div class="h-12 border-b border-slate-700 flex items-center px-4 space-x-6 text-xs font-medium bg-dark-900/50">
+        <button id="tabTriage" class="h-full active-tab flex items-center space-x-1.5 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          <span>Investigation</span>
+        </button>
+        <button id="tabTrace" class="h-full text-slate-400 hover:text-slate-200 flex items-center space-x-1.5 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+          <span>Cypher & Trace</span>
+        </button>
+        <button id="tabMemory" class="h-full text-slate-400 hover:text-slate-200 flex items-center space-x-1.5 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 3.5 3h9c2 0 3.5-1 3.5-3V7c0-2-1.5-3-3.5-3h-9C5.5 4 4 5 4 7z"/></svg>
+          <span>Team Memory</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Area (Scrollable) -->
+      <div class="flex-1 overflow-y-auto p-5 space-y-5 text-sm">
+
+        <!-- TAB 1: TRIAGE & INVESTIGATION -->
+        <div id="contentTriage" class="space-y-5">
+          
+          <!-- Investigation Input Form -->
+          <div class="glass-panel p-4 rounded-xl space-y-3">
+            <div class="flex items-center justify-between">
+              <label class="text-xs font-semibold text-slate-300">Investigate Failing Service</label>
+              <!-- Pre-filled Sample Dropdown -->
+              <select id="sampleSelector" class="bg-dark-900 border border-slate-700 text-xs text-rose-400 rounded px-2 py-1 focus:outline-none">
+                <option value="auth-service">Sample: Auth Service (Connection Leak)</option>
+                <option value="payment-service">Sample: Payment Service (Webhook Delay)</option>
+                <option value="inventory-service">Sample: Inventory Service (Cluster Split)</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <input id="inputService" type="text" value="auth-service" placeholder="Service (e.g. auth-service)" class="col-span-1 bg-dark-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none font-mono">
+              <input id="inputSymptoms" type="text" value="504 Gateway Timeout and connection leaks" placeholder="Observed Symptoms" class="col-span-2 bg-dark-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-rose-500 focus:outline-none">
+            </div>
+
+            <button id="btnInvestigate" class="w-full py-2.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold text-xs tracking-wide uppercase transition shadow-lg shadow-rose-600/30 flex items-center justify-center space-x-2">
+              <span id="btnInvestigateSpinner" class="hidden">
+                <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              </span>
+              <span id="btnInvestigateText">Run Multi-Hop Graph Investigation</span>
+            </button>
+          </div>
+
+          <!-- Results Section (Dynamic) -->
+          <div id="triageResults" class="space-y-4">
+            
+            <!-- Blast Radius Card -->
+            <div class="glass-panel p-4 rounded-xl">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-amber-400 flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                  <span>Blast Radius (<span id="blastCount">0</span> Downstream Affected)</span>
+                </h3>
+                <span class="text-[10px] text-slate-400 font-mono">Multi-hop traversal</span>
+              </div>
+              <div id="blastList" class="space-y-2 text-xs max-h-48 overflow-y-auto pr-1">
+                <div class="text-slate-400 text-center py-4">Click "Run Multi-Hop Graph Investigation" to discover blast radius.</div>
+              </div>
+            </div>
+
+            <!-- Who to Ask Card -->
+            <div class="glass-panel p-4 rounded-xl">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                  <span>Who to Ask (Owners & Resolvers)</span>
+                </h3>
+                <span class="text-[10px] text-slate-400 font-mono">Ranked by experience</span>
+              </div>
+              <div id="whoList" class="space-y-2 text-xs">
+                <div class="text-slate-400 text-center py-3">No responders queried yet.</div>
+              </div>
+            </div>
+
+            <!-- Similar Past Incidents Card -->
+            <div class="glass-panel p-4 rounded-xl">
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-purple-400 flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                  <span>Similar Incidents & Fixes</span>
+                </h3>
+                <span class="text-[10px] text-slate-400 font-mono">:SIMILAR_TO graph link</span>
+              </div>
+              <div id="similarList" class="space-y-3 text-xs">
+                <div class="text-slate-400 text-center py-3">No incident memory loaded yet.</div>
+              </div>
+            </div>
+
+            <!-- Postmortem Draft from Scribe Agent -->
+            <div class="glass-panel p-4 rounded-xl">
+              <div class="flex items-center justify-between mb-2">
+                <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center space-x-2">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  <span>Scribe Agent: Automated Postmortem</span>
+                </h3>
+                <button id="btnCopyPostmortem" class="text-[10px] text-slate-300 hover:text-white px-2 py-0.5 rounded bg-slate-700">Copy Markdown</button>
+              </div>
+              <div id="postmortemText" class="p-3 bg-dark-900 rounded-lg text-xs font-mono text-slate-300 max-h-56 overflow-y-auto whitespace-pre-wrap leading-relaxed border border-slate-800">
+                Postmortem will generate automatically after graph investigation.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- TAB 2: TRACE & CYPHER PROOF -->
+        <div id="contentTrace" class="hidden space-y-4">
+          <div class="glass-panel p-4 rounded-xl">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-rose-400 mb-1">
+              "How I Figured This Out" Reasoning Trace
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">
+              Step-by-step audit of tools executed, graph path traversals, and exact Cypher queries against FalkorDB.
+            </p>
+            <div id="traceSteps" class="space-y-3 text-xs">
+              <div class="text-slate-400 text-center py-6">Run an investigation to view autonomous tool execution trace.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: TEAM PERSISTENT MEMORY -->
+        <div id="contentMemory" class="hidden space-y-4">
+          <div class="glass-panel p-4 rounded-xl space-y-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center space-x-2">
+              <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+              <span>Log New Incident (Write to Graph Memory)</span>
+            </h3>
+            <p class="text-xs text-slate-400">
+              When logged, this incident is written into FalkorDB team memory and instantly surfaces for future similar incidents.
+            </p>
+
+            <form id="formLogIncident" class="space-y-3 pt-2">
+              <div>
+                <label class="text-[11px] text-slate-400">Incident Title</label>
+                <input id="logTitle" type="text" required placeholder="e.g. Auth Service Redis OOM Eviction" class="w-full bg-dark-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none">
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[11px] text-slate-400">Affected Service</label>
+                  <input id="logService" type="text" required value="auth-service" class="w-full bg-dark-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none font-mono">
+                </div>
+                <div>
+                  <label class="text-[11px] text-slate-400">Severity</label>
+                  <select id="logSeverity" class="w-full bg-dark-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none">
+                    <option value="P1">P1 (Critical Outage)</option>
+                    <option value="P2">P2 (Major Degradation)</option>
+                    <option value="P3">P3 (Minor Issue)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label class="text-[11px] text-slate-400">Identified Root Cause</label>
+                <textarea id="logRootCause" rows="2" required placeholder="Root cause discovered during triage..." class="w-full bg-dark-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none"></textarea>
+              </div>
+
+              <div>
+                <label class="text-[11px] text-slate-400">Verified Fix / Remediation</label>
+                <textarea id="logFix" rows="2" required placeholder="Exact steps that resolved the failure..." class="w-full bg-dark-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:border-indigo-500 focus:outline-none"></textarea>
+              </div>
+
+              <button type="submit" class="w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs tracking-wide uppercase transition shadow-lg shadow-indigo-600/30">
+                Commit to Graph Memory
+              </button>
+            </form>
+          </div>
+
+          <!-- Memory Graph Live Node List -->
+          <div class="glass-panel p-4 rounded-xl">
+            <h4 class="text-xs font-bold text-slate-300 mb-2">Team Memory Graph Snapshot</h4>
+            <div id="memoryList" class="space-y-2 text-xs max-h-48 overflow-y-auto">
+              <div class="text-slate-400 text-center py-4">Loading memory nodes...</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Client-side Logic -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
