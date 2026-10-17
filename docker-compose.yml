@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  falkordb:
+    image: falkordb/falkordb:latest
+    container_name: incident_brain_falkordb
+    ports:
+      - "6379:6379"
+    volumes:
+      - falkordb_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: incident_brain_app
+    ports:
+      - "8000:8000"
+    environment:
+      - FALKORDB_URL=redis://falkordb:6379
+      - LLM_PROVIDER=deterministic
+      - LLM_API_KEY=
+      - PORT=8000
+      - HOST=0.0.0.0
+    depends_on:
+      falkordb:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  falkordb_data:
