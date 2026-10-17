@@ -1,0 +1,29 @@
+1
+00:00:00,000 --> 00:00:14,640
+When critical microservices crash,
+engineers waste hours guessing the blast
+
+2
+00:00:14,640 --> 00:00:29,140
+Incident Brain models services,
+dependencies, historical outages, and
+
+3
+00:00:29,140 --> 00:00:45,890
+Watch the live investigation. When Auth
+Service suffers connection pool exhaustion,
+
+4
+00:00:45,890 --> 00:01:00,120
+No hallucinations. Every recommendation
+links directly to graph facts: primary owner
+
+5
+00:01:00,120 --> 00:01:14,860
+Track Two: Persistent memory. When the
+engineer logs the remediation, it is
+
+6
+00:01:14,860 --> 00:01:30,580
+Incident Brain enters all three Graph Hacks
+tracks: agents on connected data, agent
